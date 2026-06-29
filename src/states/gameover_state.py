@@ -1,51 +1,54 @@
 import pygame
 from pygame.locals import KEYDOWN, K_SPACE, K_UP
+from src.configuracao import LARGURA_TELA, Y_CHAO
+from src.states.state_machine import Estado
+from src.systems.score import renderizar_pontuacao
 
-from src.config import SCREEN_WIDTH, BASE_Y
-from src.states.state_machine import State
-from src.systems.score import render_score
 
+class EstadoFimDeJogo(Estado):
+    def entrar(self, **kwargs):
+        self.gr = self.jogo.gr
+        self.pontuacao = kwargs['pontuacao']
+        self.jogador_x = LARGURA_TELA * 0.2
+        self.jogador_y = kwargs['y']
+        self.jogador_h = self.gr.imagens['jogador'][0].get_height()
+        self.jogador_vel_y = kwargs['jogador_vel_y']
+        self.jogador_acel_y = 2
+        self.jogador_rotacao = kwargs['jogador_rotacao']
+        self.jogador_vel_rot = 7
+        self.chao_x = kwargs['base_x']
+        self.tubos_superiores = kwargs['tubos_superiores']
+        self.tubos_inferiores = kwargs['tubos_inferiores']
+        self.colisao_chao = kwargs['colisao_chao']
+        self.gr.sons['batida'].play()
+        if not self.colisao_chao:
+            self.gr.sons['morrer'].play()
 
-class GameOverState(State):
-    def enter(self, **kwargs):
-        self.rm = self.game.rm
-        self.score = kwargs['score']
-        self.player_x = SCREEN_WIDTH * 0.2
-        self.player_y = kwargs['y']
-        self.player_h = self.rm.images['player'][0].get_height()
-        self.player_vel_y = kwargs['player_vel_y']
-        self.player_acc_y = 2
-        self.player_rot = kwargs['player_rot']
-        self.player_vel_rot = 7
-        self.basex = kwargs['basex']
-        self.upper_pipes = kwargs['upper_pipes']
-        self.lower_pipes = kwargs['lower_pipes']
-        self.ground_crash = kwargs['ground_crash']
-        self.rm.sounds['hit'].play()
-        if not self.ground_crash:
-            self.rm.sounds['die'].play()
+    def processar_evento(self, evento):
+        if evento.type == KEYDOWN and (evento.key == K_SPACE or evento.key == K_UP):
+            if self.jogador_y + self.jogador_h >= Y_CHAO - 1:
+                from src.states.welcome_state import EstadoBoasVindas
+                self.jogo.me.trocar(EstadoBoasVindas(self.jogo))
 
-    def handle_event(self, event):
-        if event.type == KEYDOWN and (event.key == K_SPACE or event.key == K_UP):
-            if self.player_y + self.player_h >= BASE_Y - 1:
-                from src.states.welcome_state import WelcomeState
-                self.game.sm.change(WelcomeState(self.game))
+    def atualizar(self):
+        if self.jogador_y + self.jogador_h < Y_CHAO - 1:
+            self.jogador_y += min(self.jogador_vel_y, Y_CHAO - self.jogador_y - self.jogador_h)
 
-    def update(self):
-        if self.player_y + self.player_h < BASE_Y - 1:
-            self.player_y += min(self.player_vel_y, BASE_Y - self.player_y - self.player_h)
-        if self.player_vel_y < 15:
-            self.player_vel_y += self.player_acc_y
-        if not self.ground_crash and self.player_rot > -90:
-            self.player_rot -= self.player_vel_rot
+        if self.jogador_vel_y < 15:
+            self.jogador_vel_y += self.jogador_acel_y
 
-    def render(self, screen):
-        screen.blit(self.rm.images['background'], (0, 0))
-        for uPipe, lPipe in zip(self.upper_pipes, self.lower_pipes):
-            screen.blit(self.rm.images['pipe'][0], (uPipe['x'], uPipe['y']))
-            screen.blit(self.rm.images['pipe'][1], (lPipe['x'], lPipe['y']))
-        screen.blit(self.rm.images['base'], (self.basex, BASE_Y))
-        render_score(screen, self.score, self.rm)
-        player_surface = pygame.transform.rotate(self.rm.images['player'][1], self.player_rot)
-        screen.blit(player_surface, (self.player_x, self.player_y))
-        screen.blit(self.rm.images['gameover'], (50, 180))
+        if not self.colisao_chao and self.jogador_rotacao > -90:
+            self.jogador_rotacao -= self.jogador_vel_rot
+
+    def renderizar(self, tela):
+        tela.blit(self.gr.imagens['fundo'], (0, 0))
+
+        for tSuperior, tInferior in zip(self.tubos_superiores, self.tubos_inferiores):
+            tela.blit(self.gr.imagens['tubo'][0], (tSuperior['x'], tSuperior['y']))
+            tela.blit(self.gr.imagens['tubo'][1], (tInferior['x'], tInferior['y']))
+
+        tela.blit(self.gr.imagens['chao'], (self.chao_x, Y_CHAO))
+        renderizar_pontuacao(tela, self.pontuacao, self.gr)
+        superficie_jogador = pygame.transform.rotate(self.gr.imagens['jogador'][1], self.jogador_rotacao)
+        tela.blit(superficie_jogador, (self.jogador_x, self.jogador_y))
+        tela.blit(self.gr.imagens['fim_de_jogo'], (50, 180))

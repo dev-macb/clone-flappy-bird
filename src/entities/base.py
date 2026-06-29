@@ -1,17 +1,17 @@
-from src.config import BASE_Y
+from src.configuracao import Y_CHAO
 
 
-class Base:
-    def __init__(self, rm):
-        self.rm = rm
+class Chao:
+    def __init__(self, gr):
+        self.gr = gr
         self.x = 0
-        self._shift = rm.images['base'].get_width() - rm.images['background'].get_width()
+        self._deslocamento = gr.imagens['chao'].get_width() - gr.imagens['fundo'].get_width()
 
-    def reset(self):
+    def reiniciar(self):
         self.x = 0
 
-    def update(self, speed=100):
-        self.x = -((-self.x + speed) % self._shift)
+    def atualizar(self, velocidade=100):
+        self.x = -((-self.x + velocidade) % self._deslocamento)
 
-    def draw(self, screen):
-        screen.blit(self.rm.images['base'], (self.x, BASE_Y))
+    def desenhar(self, tela):
+        tela.blit(self.gr.imagens['chao'], (self.x, Y_CHAO))

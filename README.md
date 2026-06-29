@@ -1,40 +1,49 @@
-<h1 align="center">🔷 Clone Flappy Bird 🔷</h1>
+# Clone Flappy Bird
 
+Projeto com fins educacionais para estudo de **game design** e **Pygame**.
+Implementa um clone do Flappy Bird com física, colisão pixel-perfeita e
+máquina de estados.
 
+## Instalação
 
-<h2 id="objetivo">🎯 Objetivo</h2>
-<p>
-Este projeto é um clone do famoso jogo Flappy Bird, desenvolvido utilizando a linguagem de programação Python e a biblioteca PyGame. O objetivo principal é recriar a experiência clássica do jogo, permitindo aos usuários desafiar suas habilidades e tentar obter a pontuação mais alta.
-</p>
-<p align="center">🔷</p>
-
-
-
-<h2 id="instalação">🔧 Instalação</h2>
-<p>
-Para clonar o projeto para sua máquina via <a target="_blank" href="https://git-scm.com/">git</a>, execute os comandos a seguir:
-</p>
+Requer [Python 3](https://python.org) e [Pygame](https://pygame.org).
 
 ```bash
-$ mkdir clone-FlappyBird
-$ cd clone-FlappyBird
-$ git clone https://github.com/dev-macb/clone-FlappyBird
+pip install -r requirements.txt
+python main.py
 ```
 
-<p>
-Execute o programa rodando os seguintes comandos:
-</p>
+## Como jogar
 
-```bash
-$ pip install pygame
-$ py principal.py
+| Tecla       | Ação        |
+|-------------|-------------|
+| Espaço / ↑  | Bater asas  |
+| Esc         | Sair        |
+
+## Arquitetura
+
 ```
-<p align="center">🔷</p>
+src/
+├── engine/
+│   ├── jogo.py                    # Loop principal (init, eventos, update, render)
+│   └── gerenciador_de_recursos.py # Carrega e gerencia imagens, sons, máscaras
+├── entities/
+│   ├── base.py                    # Chao — scroll infinito do chão
+│   ├── pipe.py                    # Geração de pares de tubos
+│   └── player.py                  # Jogador — física, animação, rotação
+├── states/
+│   ├── state_machine.py           # Estado (ABC) + MaquinaEstado
+│   ├── welcome_state.py           # Tela inicial com pássaro oscilante
+│   ├── play_state.py              # Gameplay: input, pontuação, colisão
+│   └── gameover_state.py          # Tela de fim com queda do pássaro
+└── systems/
+    ├── collision.py               # Colisão pixel-perfeita via máscara alpha
+    └── score.py                   # Renderiza pontuação com sprites de dígitos
+```
 
+**Fluxo de execução:**
 
-
-<h2 id="licença">📄 Licença</h2>
-<p>
-    Este projeto utiliza a <strong>licença MIT</strong> em todo seu código, confira suas condições em <a href="https://github.com/dev-macb/clone-FlappyBird/blob/dev/LICENSE.md">LICENSE</a>.
-</p>
-<p align="center">🔷</p>
+1. `Jogo.executar()` inicia a `MaquinaEstado` no `EstadoBoasVindas`
+2. A cada frame: processa eventos → atualiza estado atual → renderiza na tela
+3. `EstadoBoasVindas` → (Espaço/↑) → `EstadoJogo` → (colisão) → `EstadoFimDeJogo`
+4. Em `EstadoFimDeJogo`, Espaço/↑ após cair no chão reinicia em `EstadoBoasVindas`

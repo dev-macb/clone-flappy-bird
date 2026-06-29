@@ -1,4 +1,5 @@
-from src.engine.game import Game
+from src.engine.jogo import Jogo
+
 
 if __name__ == '__main__':
-    Game().run()
+    Jogo().executar()

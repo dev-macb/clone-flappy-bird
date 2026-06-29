@@ -1,45 +1,50 @@
-class State:
-    def __init__(self, game):
-        self.game = game
+class Estado:
+    def __init__(self, jogo):
+        self.jogo = jogo
 
-    def enter(self, **kwargs):
+    def entrar(self, **kwargs):
         pass
 
-    def exit(self):
+    def sair(self):
         pass
 
-    def handle_event(self, event):
+    def processar_evento(self, evento):
         pass
 
-    def update(self):
+    def atualizar(self):
         pass
 
-    def render(self, screen):
+    def renderizar(self, tela):
         pass
 
 
-class StateMachine:
+class MaquinaEstado:
     def __init__(self):
-        self._states = []
+        self._estados = []
+
 
     @property
-    def current(self):
-        return self._states[-1] if self._states else None
+    def atual(self):
+        return self._estados[-1] if self._estados else None
 
-    def change(self, state_cls, **kwargs):
-        if self._states:
-            self._states[-1].exit()
-        self._states = [state_cls]
-        self._states[-1].enter(**kwargs)
 
-    def handle_event(self, event):
-        if self.current:
-            self.current.handle_event(event)
+    def trocar(self, estado_cls, **kwargs):
+        if self._estados:
+            self._estados[-1].sair()
+        self._estados = [estado_cls]
+        self._estados[-1].entrar(**kwargs)
 
-    def update(self):
-        if self.current:
-            self.current.update()
 
-    def render(self, screen):
-        if self.current:
-            self.current.render(screen)
+    def processar_evento(self, evento):
+        if self.atual:
+            self.atual.processar_evento(evento)
+
+
+    def atualizar(self):
+        if self.atual:
+            self.atual.atualizar()
+
+
+    def renderizar(self, tela):
+        if self.atual:
+            self.atual.renderizar(tela)

@@ -1,45 +1,47 @@
-from itertools import cycle
-
 import pygame
+from itertools import cycle
+from src.configuracao import JOGADOR_X, JOGADOR_ACEL_BATIDA, JOGADOR_VEL_Y_MAXIMO, JOGADOR_ACEL_Y, Y_CHAO
 
-from src.config import PLAYER_X, PLAYER_FLAP_ACC, PLAYER_MAX_VEL_Y, PLAYER_ACC_Y, BASE_Y
 
-
-class Player:
-    def __init__(self, rm, y=0):
-        self.rm = rm
-        self.x = PLAYER_X
+class Jogador:
+    def __init__(self, gr, y=0):
+        self.gr = gr
+        self.x = JOGADOR_X
         self.y = y
         self.vel_y = -9
-        self.rot = 45
-        self.index = 0
-        self.index_gen = cycle([0, 1, 2, 1])
-        self.loop_iter = 0
-        self.flapped = False
+        self.rotacao = 45
+        self.indice = 0
+        self.gerador_indice = cycle([0, 1, 2, 1])
+        self.iter_loop = 0
+        self.bateu = False
 
-    def flap(self):
-        if self.y > -2 * self.rm.images['player'][0].get_height():
-            self.vel_y = PLAYER_FLAP_ACC
-            self.flapped = True
 
-    def update(self):
-        if (self.loop_iter + 1) % 3 == 0:
-            self.index = next(self.index_gen)
-        self.loop_iter = (self.loop_iter + 1) % 30
-        if self.rot > -90:
-            self.rot -= 3
-        if self.vel_y < PLAYER_MAX_VEL_Y and not self.flapped:
-            self.vel_y += PLAYER_ACC_Y
-        if self.flapped:
-            self.flapped = False
-            self.rot = 45
-        player_h = self.rm.images['player'][self.index].get_height()
-        self.y += min(self.vel_y, BASE_Y - self.y - player_h)
+    def bater(self):
+        if self.y > -2 * self.gr.imagens['jogador'][0].get_height():
+            self.vel_y = JOGADOR_ACEL_BATIDA
+            self.bateu = True
 
-    def get_visible_rot(self):
-        return min(self.rot, 20)
 
-    def draw(self, screen):
-        visible_rot = self.get_visible_rot()
-        surface = pygame.transform.rotate(self.rm.images['player'][self.index], visible_rot)
-        screen.blit(surface, (self.x, self.y))
+    def atualizar(self):
+        if (self.iter_loop + 1) % 3 == 0:
+            self.indice = next(self.gerador_indice)
+        self.iter_loop = (self.iter_loop + 1) % 30
+        if self.rotacao > -90:
+            self.rotacao -= 3
+        if self.vel_y < JOGADOR_VEL_Y_MAXIMO and not self.bateu:
+            self.vel_y += JOGADOR_ACEL_Y
+        if self.bateu:
+            self.bateu = False
+            self.rotacao = 45
+        altura_jogador = self.gr.imagens['jogador'][self.indice].get_height()
+        self.y += min(self.vel_y, Y_CHAO - self.y - altura_jogador)
+
+
+    def obter_rot_visivel(self):
+        return min(self.rotacao, 20)
+
+
+    def desenhar(self, tela):
+        rot_visivel = self.obter_rot_visivel()
+        superficie = pygame.transform.rotate(self.gr.imagens['jogador'][self.indice], rot_visivel)
+        tela.blit(superficie, (self.x, self.y))

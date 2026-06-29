@@ -1,51 +1,52 @@
 from itertools import cycle
-
 from pygame.locals import KEYDOWN, K_SPACE, K_UP
+from src.configuracao import LARGURA_TELA, ALTURA_TELA
+from src.entities.base import Chao
+from src.states.state_machine import Estado
 
-from src.config import SCREEN_WIDTH, SCREEN_HEIGHT
-from src.entities.base import Base
-from src.states.state_machine import State
+
+class EstadoBoasVindas(Estado):
+    def entrar(self, **kwargs):
+        self.gr = self.jogo.gr
+        self.gr.aleatorizar()
+        self.indice_jogador = 0
+        self.gerador_indice_jogador = cycle([0, 1, 2, 1])
+        self.iter_loop = 0
+        self.jogador_x = int(LARGURA_TELA * 0.2)
+        self.jogador_y = int((ALTURA_TELA - self.gr.imagens['jogador'][0].get_height()) / 2)
+        self.mensagem_x = int((LARGURA_TELA - self.gr.imagens['mensagem'].get_width()) / 2)
+        self.mensagem_y = int(ALTURA_TELA * 0.12)
+        self.chao = Chao(self.gr)
+        self.chao.reiniciar()
+        self.valor_osc = 0
+        self.dir_osc = 1
 
 
-class WelcomeState(State):
-    def enter(self, **kwargs):
-        self.rm = self.game.rm
-        self.rm.randomize()
-        self.player_index = 0
-        self.player_index_gen = cycle([0, 1, 2, 1])
-        self.loop_iter = 0
-        self.player_x = int(SCREEN_WIDTH * 0.2)
-        self.player_y = int((SCREEN_HEIGHT - self.rm.images['player'][0].get_height()) / 2)
-        self.message_x = int((SCREEN_WIDTH - self.rm.images['message'].get_width()) / 2)
-        self.message_y = int(SCREEN_HEIGHT * 0.12)
-        self.base = Base(self.rm)
-        self.base.reset()
-        self.shm_val = 0
-        self.shm_dir = 1
+    def processar_evento(self, evento):
+        if evento.type == KEYDOWN and (evento.key == K_SPACE or evento.key == K_UP):
+            self.gr.sons['asa'].play()
+            from src.states.play_state import EstadoJogo
+            self.jogo.me.trocar(
+                EstadoJogo(self.jogo),
+                jogador_y=self.jogador_y + self.valor_osc,
+                base_x=self.chao.x,
+                gerador_indice_jogador=self.gerador_indice_jogador,)
 
-    def handle_event(self, event):
-        if event.type == KEYDOWN and (event.key == K_SPACE or event.key == K_UP):
-            self.rm.sounds['wing'].play()
-            from src.states.play_state import PlayState
-            self.game.sm.change(
-                PlayState(self.game),
-                playery=self.player_y + self.shm_val,
-                basex=self.base.x,
-                player_index_gen=self.player_index_gen,
-            )
 
-    def update(self):
-        if (self.loop_iter + 1) % 5 == 0:
-            self.player_index = next(self.player_index_gen)
-        self.loop_iter = (self.loop_iter + 1) % 30
-        self.base.update()
-        if abs(self.shm_val) == 8:
-            self.shm_dir *= -1
-        self.shm_val += self.shm_dir
+    def atualizar(self):
+        if (self.iter_loop + 1) % 5 == 0:
+            self.indice_jogador = next(self.gerador_indice_jogador)
 
-    def render(self, screen):
-        screen.blit(self.rm.images['background'], (0, 0))
-        screen.blit(self.rm.images['player'][self.player_index],
-                    (self.player_x, self.player_y + self.shm_val))
-        screen.blit(self.rm.images['message'], (self.message_x, self.message_y))
-        self.base.draw(screen)
+        self.iter_loop = (self.iter_loop + 1) % 30
+        self.chao.atualizar()
+
+        if abs(self.valor_osc) == 8:
+            self.dir_osc *= -1
+
+        self.valor_osc += self.dir_osc
+
+    def renderizar(self, tela):
+        tela.blit(self.gr.imagens['fundo'], (0, 0))
+        tela.blit(self.gr.imagens['jogador'][self.indice_jogador], (self.jogador_x, self.jogador_y + self.valor_osc))
+        tela.blit(self.gr.imagens['mensagem'], (self.mensagem_x, self.mensagem_y))
+        self.chao.desenhar(tela)
